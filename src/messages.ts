@@ -1,14 +1,17 @@
 import axios from 'axios';
-import querystring from 'querystring';
-import figlet from 'figlet';
-import { NotACommand, RabbotCommand } from './commands';
 import discord from 'discord.js';
-import { getLogger } from './logger';
-import Jimp from 'jimp';
+import figlet from 'figlet';
 import * as I from 'immutable';
+import Jimp from 'jimp';
+import querystring from 'querystring';
+import { NotACommand, RabbotCommand } from './commands';
+import { AppConfig } from './config';
+import { jimpToAttachment } from './images';
+import { JikanResponse } from './jikan';
+import { getLogger } from './logger';
 
-export function createCommandParser(appConfig: AppConfig) {
-    return (message: discord.Message) => parseCommand(message, appConfig);
+export function createCommandParser(botId: string, appConfig: AppConfig) {
+    return (message: discord.Message) => parseCommand(message, botId, appConfig);
 }
 
 type CommandParser = (message: discord.Message) => RabbotCommand | NotACommand;
@@ -17,8 +20,8 @@ type CommandParser = (message: discord.Message) => RabbotCommand | NotACommand;
  * Decide which command a message corresponds to.
  * @param message The sent message
  */
-function parseCommand(message: discord.Message, appConfig: AppConfig): RabbotCommand | NotACommand {
-    const shouldIgnore = !message.content.startsWith('!') || message.member.user.id === appConfig.botId();
+function parseCommand(message: discord.Message, botId: string, appConfig: AppConfig): RabbotCommand | NotACommand {
+    const shouldIgnore = !message.content.startsWith('!') || message.member.user.id === botId;
     if (shouldIgnore) { return { cmdType: 'not-command' } }
     const logger = getLogger();
 
@@ -125,6 +128,8 @@ export async function handleMessage(message: discord.Message, parseCommand: Comm
                 '!watch [title]',
                 '!list',
                 '!search [title]',
+                '!cat <text>',
+                '!figlet [text]'
             ].join('\n');
             await channel.send(help);
             return;
@@ -142,59 +147,22 @@ export async function handleMessage(message: discord.Message, parseCommand: Comm
     }
 }
 
-export interface AppConfig {
-    botId: () => string;
-    Tuturu: () => Jimp;
-}
-
 export async function createGreetingImage(user: discord.User, appConfig: AppConfig) {
     const avatar = await Jimp.read(user.displayAvatarURL);
     avatar.scaleToFit(150, 150);
     const copy = appConfig.Tuturu();
     copy.composite(avatar, 0, 0);
-    const buf = await getBuffer(copy);
-    const attach = new discord.Attachment(buf, 'hello.png');
+    const attach = jimpToAttachment(copy, 'hello');
     return attach;
 }
 
 async function getCatPic(url: string) {
     const cat = await Jimp.read(url);
-    const buf = await getBuffer(cat);
-    const attach = new discord.Attachment(buf, 'cat.png');
+    const attach = jimpToAttachment(cat, 'cat');
     return attach;
-}
-
-async function getBuffer(input: Jimp): Promise<Buffer> {
-    return new Promise<Buffer>((res, rej) => {
-        input.getBuffer(Jimp.MIME_PNG, (ex, buf) => {
-            if (!ex) {
-                res(buf);
-            }
-
-            rej(ex);
-        })
-    });
 }
 
 function any<T>(arr: T[]) {
     return arr.length > 0;
 }
 
-export interface JikanResult {
-    mal_id: number;
-    url: string;
-    image_url: string;
-    title: string;
-    description: string;
-    type: string;
-    score: number;
-    episodes: number;
-    members: number;
-}
-
-export interface JikanResponse {
-    request_hash: string;
-    request_cached: boolean;
-    result: JikanResult[];
-    result_last_page: number;
-}
