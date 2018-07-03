@@ -30,8 +30,8 @@ type Help = {
 }
 
 /** Print some fancy ascii text */
-type Figlet = {
-    cmdType: 'figlet';
+type Ascii = {
+    cmdType: 'ascii';
     text: string;
 }
 
@@ -44,6 +44,9 @@ type Cat = {
 /** Ping rabbot */
 type Ping = { cmdType: 'ping'; }
 
+/** Github information */
+type About = { cmdType: 'about'; }
+
 /** Not a recognized command */
 export type NotACommand = { cmdType: 'not-command'; }
 
@@ -52,7 +55,8 @@ export type RabbotCommand = WatchShow
     | SearchShow
     | Ping
     | Join
-    | Figlet
+    | Ascii
     | Cat
     | Help
+    | About
     ;

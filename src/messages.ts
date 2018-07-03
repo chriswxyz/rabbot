@@ -54,7 +54,7 @@ function parseCommand(message: discord.Message, botId: string, appConfig: AppCon
         return { cmdType, query, input };
     }
 
-    if (cmdType === 'figlet') {
+    if (cmdType === 'ascii') {
         const input = args.slice(1).join(' ');
         const output: string = figlet.textSync(input).trim();
         const text = `\`\`\`${output}\`\`\``;
@@ -71,6 +71,7 @@ function parseCommand(message: discord.Message, botId: string, appConfig: AppCon
     }
 
     if (cmdType === 'help') { return { cmdType }; }
+    if (cmdType === 'about') { return { cmdType }; }
 
     return { cmdType: 'not-command' };
 }
@@ -129,12 +130,12 @@ export async function handleMessage(message: discord.Message, parseCommand: Comm
                 '!list',
                 '!search [title]',
                 '!cat <text>',
-                '!figlet [text]'
+                '!ascii [text]'
             ].join('\n');
             await channel.send(help);
             return;
         }
-        case 'figlet': {
+        case 'ascii': {
             await message.channel.send(cmd.text);
             return;
         }
@@ -142,6 +143,10 @@ export async function handleMessage(message: discord.Message, parseCommand: Comm
             const attach = await getCatPic(cmd.url);
             await message.channel.send('Meow~', attach);
             return
+        }
+        case 'about': {
+            await message.channel.send('https://github.com/chriswxyz/rabbot');
+            return;
         }
         default: { }
     }
