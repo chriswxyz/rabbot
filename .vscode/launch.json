@@ -7,8 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug",
-            //"program": "${workspaceFolder}\\src\\index.ts",
+            "name": "Debug (offline)",
             "args": [
                 "${workspaceRoot}/src/index.ts"
             ],
@@ -20,6 +19,26 @@
             "sourceMaps": true,
             "cwd": "${workspaceRoot}",
             "protocol": "inspector",
+            "console": "integratedTerminal" //VSCode debug console does not read from stdin
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug (online)",
+            "args": [
+                "${workspaceRoot}/src/index.ts",
+                "--online"
+            ],
+            "runtimeArgs": [
+                "--nolazy",
+                "-r",
+                "ts-node/register"
+            ],
+            "sourceMaps": true,
+            "cwd": "${workspaceRoot}",
+            "protocol": "inspector",
+            "console": "internalConsole",
+            "outputCapture": "std" //winston logs to stdout instead of console
         }
     ]
 }
