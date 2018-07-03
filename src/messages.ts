@@ -36,6 +36,14 @@ function parseCommand(message: discord.Message, appConfig: AppConfig): RabbotCom
         return { cmdType };
     }
 
+    if (cmdType === 'cat') {
+        const text = args.slice(1);
+        const url = any(text)
+            ? `https://cataas.com/cat/says/${querystring.escape(text.join(' '))}`
+            : `https://cataas.com/cat`;
+        return { cmdType, url };
+    }
+
     if (cmdType === 'search') {
         const input = args.slice(1).join(' ');
         const qs = querystring.stringify({ q: input, page: 1 });
@@ -125,6 +133,11 @@ export async function handleMessage(message: discord.Message, parseCommand: Comm
             await message.channel.send(cmd.text);
             return;
         }
+        case 'cat': {
+            const attach = await getCatPic(cmd.url);
+            await message.channel.send('Meow~', attach);
+            return
+        }
         default: { }
     }
 }
@@ -141,6 +154,13 @@ export async function createGreetingImage(user: discord.User, appConfig: AppConf
     copy.composite(avatar, 0, 0);
     const buf = await getBuffer(copy);
     const attach = new discord.Attachment(buf, 'hello.png');
+    return attach;
+}
+
+async function getCatPic(url: string) {
+    const cat = await Jimp.read(url);
+    const buf = await getBuffer(cat);
+    const attach = new discord.Attachment(buf, 'cat.png');
     return attach;
 }
 

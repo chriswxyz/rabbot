@@ -35,6 +35,12 @@ type Figlet = {
     text: string;
 }
 
+/** Show a picture of a cat with optional text */
+type Cat = {
+    cmdType: 'cat';
+    url: string;
+}
+
 /** Ping rabbot */
 type Ping = { cmdType: 'ping'; }
 
@@ -47,5 +53,6 @@ export type RabbotCommand = WatchShow
     | Ping
     | Join
     | Figlet
+    | Cat
     | Help
     ;
