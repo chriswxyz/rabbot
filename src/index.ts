@@ -58,18 +58,21 @@ async function blastOffCli() {
         }
     }
 
-    const z = readline.createInterface(process.stdin, process.stdout);
-    z.setPrompt('rabbot>');
-    z.prompt();
-    z.on('line', async content => {
+    const consoleIn = readline.createInterface(process.stdin, process.stdout);
+    consoleIn.setPrompt('rabbot>');
+    consoleIn.prompt();
+    consoleIn.on('line', async content => {
         const msg = {
             content,
             member,
             channel: {
-                send: async (i: any, attach: discord.Attachment) => {
-                    if (!attach) { logger.debug(i) }
+                send: async (input: any, attach: discord.Attachment) => {
+                    if (!attach) {
+                        logger.debug(input)
+                        return;
+                    }
                     const img = await terminalImage.buffer(attach.attachment);
-                    logger.debug(i);
+                    logger.debug(input);
                     console.log(img);
                 }
             },
@@ -77,7 +80,7 @@ async function blastOffCli() {
         } as any;
 
         await handleMessage(msg, commandParser, staticMedia)
-        z.prompt();
+        consoleIn.prompt();
     })
 }
 
