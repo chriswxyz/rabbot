@@ -37,7 +37,7 @@ async function blastOffDiscord() {
         bot.on('error', e => logger.error(e));
         bot.on('guildMemberAdd', x => handleServerAdd(x, config))
     });
-    bot.login();
+    bot.login(config.botToken());
 }
 
 async function handleServerAdd(member: discord.GuildMember, config: AppConfig) {
