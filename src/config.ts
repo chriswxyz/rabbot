@@ -15,8 +15,6 @@ export interface ConfigError {
 
 /** Load secret tokens and other static data */
 export async function loadAppConfig(): Promise<AppConfig | ConfigError> {
-    const logger = getLogger();
-
     const tuturu = await Jimp.read('./media/tuturu.png');
     tuturu.scaleToFit(150, 150);
     tuturu.contain(300, 150, Jimp.HORIZONTAL_ALIGN_RIGHT);

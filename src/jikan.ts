@@ -13,6 +13,6 @@ export interface JikanResult {
 export interface JikanResponse {
     request_hash: string;
     request_cached: boolean;
-    result: JikanResult[];
-    result_last_page: number;
+    results: JikanResult[];
+    request_cache_expiry: number;
 }

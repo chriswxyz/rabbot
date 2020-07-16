@@ -6,9 +6,9 @@ import Jimp from 'jimp';
  * @param input Source image
  * @param title Name of the file, without extensions
  */
-export async function jimpToAttachment(input: Jimp, title: string | null): Promise<discord.Attachment> {
+export async function jimpToAttachment(input: Jimp, title: string | null): Promise<discord.MessageAttachment> {
     const buf = await getBuffer(input);
-    const attach = new discord.Attachment(buf, `${title || 'untitled'}.png`);
+    const attach = new discord.MessageAttachment(buf, `${title || 'untitled'}.png`);
     return attach
 }
 

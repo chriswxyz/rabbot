@@ -4,26 +4,31 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "@types/dotenv": "^4.0.3",
-    "@types/node": "^10.3.4",
-    "axios": "^0.18.0",
-    "discord.js": "^11.3.2",
-    "dotenv": "^6.0.0",
-    "figlet": "^1.2.0",
+    "@types/dotenv": "8.2.0",
+    "@types/node": "14.0.14",
+    "axios": "0.19.2",
+    "chalk": "4.1.0",
+    "discord.js": "^12.2.0",
+    "dotenv": "8.2.0",
+    "figlet": "1.4.0",
     "immutable": "^3.8.2",
-    "jimp": "^0.2.28",
-    "terminal-image": "^0.1.1",
-    "ts-node": "^6.1.2",
-    "tslint": "^5.10.0",
-    "typescript": "^2.9.2",
-    "winston": "^3.0.0"
+    "jimp": "0.14.0",
+    "terminal-image": "1.1.0",
+    "ts-node": "8.10.2",
+    "tslint": "6.1.2",
+    "typescript": "3.9.6",
+    "winston": "3.3.3"
   },
   "scripts": {
     "serve": "ts-node ./src/index.ts --online",
     "offline": "ts-node ./src/index.ts --offline",
     "repl": "ts-node",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "check": "npm-check --update --save-exact"
   },
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "npm-check": "^5.9.2"
+  }
 }

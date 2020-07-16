@@ -47,6 +47,8 @@ type Ping = { cmdType: 'ping'; }
 /** Github information */
 type About = { cmdType: 'about'; }
 
+type Gacha = { cmdType: 'gacha'; }
+
 /** Not a recognized command */
 export type NotACommand = { cmdType: 'not-command'; }
 
@@ -57,6 +59,7 @@ export type RabbotCommand = WatchShow
     | Join
     | Ascii
     | Cat
+    | Gacha
     | Help
     | About
     ;

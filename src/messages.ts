@@ -6,6 +6,7 @@ import Jimp from 'jimp';
 import querystring from 'querystring';
 import { NotACommand, RabbotCommand } from './commands';
 import { AppConfig } from './config';
+import { crankGacha } from './gacha';
 import { jimpToAttachment } from './images';
 import { JikanResponse } from './jikan';
 import { getLogger } from './logger';
@@ -21,7 +22,13 @@ type CommandParser = (message: discord.Message) => RabbotCommand | NotACommand;
  * @param message The sent message
  */
 function parseCommand(message: discord.Message, botId: string, appConfig: AppConfig): RabbotCommand | NotACommand {
-    const shouldIgnore = !message.content.startsWith('!') || message.member.user.id === botId;
+    const hasBang = message.content.startsWith('!');
+    const member = message.member;
+    if (!member) { return { cmdType: 'not-command' }; }
+
+    const isThisBot = member.user.id === botId;
+
+    const shouldIgnore = !hasBang || isThisBot;
     if (shouldIgnore) { return { cmdType: 'not-command' } }
     const logger = getLogger();
 
@@ -50,7 +57,8 @@ function parseCommand(message: discord.Message, botId: string, appConfig: AppCon
     if (cmdType === 'search') {
         const input = args.slice(1).join(' ');
         const qs = querystring.stringify({ q: input, page: 1 });
-        const query = `https://api.jikan.moe/search/anime?${qs}`
+        const query = `https://api.jikan.moe/v3/search/anime?${qs}`
+        logger.debug(query);
         return { cmdType, query, input };
     }
 
@@ -69,7 +77,7 @@ function parseCommand(message: discord.Message, botId: string, appConfig: AppCon
     if (cmdType === 'ping') {
         return { cmdType };
     }
-
+    if (cmdType === 'gacha') { return { cmdType }; }
     if (cmdType === 'help') { return { cmdType }; }
     if (cmdType === 'about') { return { cmdType }; }
 
@@ -83,77 +91,100 @@ let shows: I.Set<string> = I.Set<string>();
 export async function handleMessage(message: discord.Message, parseCommand: CommandParser, appConfig: AppConfig) {
     const cmd = parseCommand(message);
     const logger = getLogger();
-    switch (cmd.cmdType) {
-        case 'watch': {
-            shows = shows.add(cmd.title);
-            message.reply(`OK! You want to watch ${cmd.title}~`)
-            return;
-        }
-        case 'list': {
-            message.reply(`Here's what I know~\n`);
-            const showList = shows.join('\n');
-            message.channel.send(showList);
-            return;
-        }
-        case 'search': {
-            const searchResponse = await axios.get<JikanResponse>(cmd.query);
-            logger.debug(`Search for ${cmd.input}`);
-
-            const results = searchResponse.data.result.slice(0, 3);
-            const ems = results.map(r => new discord.RichEmbed({
-                title: r.title,
-                description: r.description,
-                url: r.url,
-                thumbnail: { url: r.image_url }
-            }));
-            results.forEach(x => logger.debug(`Found: ${x.title} (${x.mal_id})`));
-
-            if (!any(results)) {
-                await message.channel.send('I couldn\'t find anything~');
+    try {
+        switch (cmd.cmdType) {
+            case 'watch': {
+                shows = shows.add(cmd.title);
+                message.reply(`OK! You want to watch ${cmd.title}~`)
                 return;
             }
+            case 'list': {
+                logger.debug('aaaaa');
+                message.reply(`Here's what I know~\n`);
+                const showList = shows.join('\n');
+                message.channel.send(showList);
+                return;
+            }
+            case 'search': {
+                const searchResponse = await axios.get<JikanResponse>(cmd.query);
+                logger.debug(`Search for ${cmd.input}`);
 
-            await message.channel.send('I found this~');
-            await Promise.all(ems.map(x => message.channel.send(x)));
+                const results = searchResponse.data.results.slice(0, 3);
+                const ems = results.map(r => new discord.MessageEmbed({
+                    title: r.title,
+                    description: r.description,
+                    url: r.url,
+                    thumbnail: { url: r.image_url }
+                }));
+                results.forEach(x => logger.debug(`Found: ${x.title} (${x.mal_id})`));
 
-            return;
+                if (!any(results)) {
+                    await message.channel.send('I couldn\'t find anything~');
+                    return;
+                }
+
+                await message.channel.send('I found this~');
+                await Promise.all(ems.map(x => message.channel.send(x)));
+
+                return;
+            }
+            case 'join': {
+                if (!message.member) {
+                    return;
+                }
+                const attach = await createGreetingImage(message.member.user, appConfig);
+                await message.channel.send(`Tuturu, ${message.member.user.username}!`, attach);
+                return;
+            }
+            case 'help': {
+                const { channel } = message;
+                const help = [
+                    '!watch [title]',
+                    '!list',
+                    '!search [title]',
+                    '!cat <text>',
+                    '!ascii [text]'
+                ].join('\n');
+                await channel.send(help);
+                return;
+            }
+            case 'ascii': {
+                await message.channel.send(cmd.text);
+                return;
+            }
+            case 'cat': {
+                const attach = await getCatPic(cmd.url);
+                await message.channel.send('Meow~', attach);
+                return
+            }
+            case 'gacha': {
+                if (!message.member) {
+                    return;
+                }
+
+                const ball = crankGacha();
+
+                await message.channel.send('Crank~ Pon!');
+                await message.channel.send(`${message.member.user.username}'s gacha ball contained:`);
+                await message.channel.send(`${ball.gold} gold pieces`)
+                await message.channel.send(`${ball.xp} XP`)
+                await Promise.all(ball.items.map(x => message.channel.send(x.title)))
+                return;
+            }
+            case 'about': {
+                await message.channel.send('https://github.com/chriswxyz/rabbot');
+                return;
+            }
+            default: { }
         }
-        case 'join': {
-            const attach = await createGreetingImage(message.member.user, appConfig);
-            await message.channel.send(`Tuturu, ${message.member.user.username}!`, attach);
-            return;
-        }
-        case 'help': {
-            const { channel } = message;
-            const help = [
-                '!watch [title]',
-                '!list',
-                '!search [title]',
-                '!cat <text>',
-                '!ascii [text]'
-            ].join('\n');
-            await channel.send(help);
-            return;
-        }
-        case 'ascii': {
-            await message.channel.send(cmd.text);
-            return;
-        }
-        case 'cat': {
-            const attach = await getCatPic(cmd.url);
-            await message.channel.send('Meow~', attach);
-            return
-        }
-        case 'about': {
-            await message.channel.send('https://github.com/chriswxyz/rabbot');
-            return;
-        }
-        default: { }
+    } catch (e) {
+        logger.error(e);
     }
 }
 
 export async function createGreetingImage(user: discord.User, appConfig: AppConfig) {
-    const avatar = await Jimp.read(user.displayAvatarURL);
+    let avatarUrl = user.avatarURL() || user.defaultAvatarURL;
+    const avatar = await Jimp.read(avatarUrl);
     avatar.scaleToFit(150, 150);
     const copy = appConfig.Tuturu();
     copy.composite(avatar, 0, 0);

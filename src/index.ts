@@ -30,6 +30,11 @@ async function blastOffDiscord() {
     bot.on('ready', async () => {
         logger.info('READY!');
 
+        if (!bot.user) {
+            logger.error('Could not get bot user! How can this be?');
+            return;
+        }
+
         const commandParser = createCommandParser(bot.user.id, config);
         bot.on('message', m => handleMessage(m, commandParser, config));
 
@@ -40,10 +45,19 @@ async function blastOffDiscord() {
     bot.login(config.botToken());
 }
 
-async function handleServerAdd(member: discord.GuildMember, config: AppConfig) {
-    const channel = member.guild.channels.find('name', 'general') as discord.TextChannel;
-    const attach = await createGreetingImage(member.user, config);
-    await channel.send(`Tuturu, ${member.user.username}!`, attach);
+async function handleServerAdd(member: discord.GuildMember | discord.PartialGuildMember, config: AppConfig) {
+    const channel = member.guild.channels.resolve('general') as discord.TextChannel;
+    const user = member.user;
+    if (!channel) {
+        logger.error('No general channel found.')
+        return;
+    }
+    if (!user) {
+        logger.error('No user found for this member.');
+        return;
+    }
+    const attach = await createGreetingImage(user, config);
+    await channel.send(`Tuturu, ${user.username}!`, attach);
     return;
 }
 
@@ -70,7 +84,7 @@ async function blastOffCli() {
             content,
             member,
             channel,
-            reply: logger.debug
+            reply: (x: string) => logger.debug(x)
         } as any;
 
         await handleMessage(msg, commandParser, config)
